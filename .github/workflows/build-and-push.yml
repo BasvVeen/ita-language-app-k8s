@@ -1,0 +1,37 @@
+name: Build and Push to ACR
+
+on:
+  push:
+    branches:
+      - main
+      - feat--add-github-actions-cicd   # included for testing now
+
+permissions:
+  id-token: write   # required for OIDC login to Azure
+  contents: read
+
+env:
+  REGISTRY: italanguageappregistry.azurecr.io
+  IMAGE_NAME: ita-language-app
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log in to ACR
+        run: az acr login --name italanguageappregistry
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Build and push
+        run: just push tag=${{ github.sha }}
